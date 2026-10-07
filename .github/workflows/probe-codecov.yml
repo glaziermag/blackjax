@@ -1,0 +1,51 @@
+name: Probe Codecov upload
+
+on:
+  push:
+    branches: [probe/codecov-oidc]
+  workflow_dispatch:
+
+jobs:
+  as-on-main:
+    name: A - codecov-action@v3 without token (as on main)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        python-version: '3.13'
+    - name: Set up test environment
+      run: uv sync --group dev --extra progress
+    - name: Run a small test subset with coverage
+      run: uv run pytest -n 2 --benchmark-disable --cov=blackjax --cov-report=xml tests/test_util.py
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        env_vars: OS,PYTHON
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  oidc:
+    name: B - codecov-action@v7 with OIDC
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        python-version: '3.13'
+    - name: Set up test environment
+      run: uv sync --group dev --extra progress
+    - name: Run a small test subset with coverage
+      run: uv run pytest -n 2 --benchmark-disable --cov=blackjax --cov-report=xml tests/test_util.py
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v7
+      with:
+        use_oidc: true
+        env_vars: OS,PYTHON
+        name: codecov-umbrella
+        fail_ci_if_error: true
